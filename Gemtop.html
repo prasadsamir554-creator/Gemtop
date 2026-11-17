@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080d19">
+<title>GEM RUSH</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+ --bg:#080d19;
+ --panel:#141f32;
+ --panel2:#1b2940;
+ --text:#ffffff;
+ --muted:#aab8ce;
+ --green:#27dfb5;
+ --blue:#238fe0;
+ --gold:#ffd45b;
+ --red:#ff6262;
+}
+body{
+ background:var(--bg);
+ color:var(--text);
+ font-family:Arial,sans-serif;
+ padding-bottom:85px;
+}
+button,input{font:inherit}
+button{cursor:pointer}
+header{
+ position:sticky;top:0;z-index:5;
+ display:flex;align-items:center;
+ justify-content:space-between;
+ padding:17px;
+ background:#111a2b;
+ border-bottom:1px solid #293952;
+}
+.logo{font-size:23px;font-weight:900;color:var(--green)}
+.coins{
+ background:#26354c;
+ padding:9px 13px;
+ border-radius:20px;
+ color:var(--gold);
+ font-weight:bold;
+}
+.container{padding:15px;max-width:600px;margin:auto}
+.card{
+ background:var(--panel);
+ border:1px solid #293952;
+ border-radius:16px;
+ padding:17px;
+ margin-bottom:15px;
+}
+h2{font-size:19px;margin-bottom:10px}
+h3{font-size:16px;margin-bottom:8px}
+p{font-size:14px;color:var(--muted);line-height:1.5}
+.btn{
+ width:100%;padding:13px;
+ border:0;border-radius:10px;
+ background:linear-gradient(120deg,var(--green),var(--blue));
+ color:#07151c;font-weight:bold;
+ margin-top:12px;
+}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.secondary{
+ background:#26354c;color:white;
+}
+input{
+ width:100%;padding:13px;
+ margin-top:9px;
+ border:1px solid #354762;
+ border-radius:9px;
+ background:#0b1423;color:white;
+ outline:none;
+}
+input:focus{border-color:var(--green)}
+.view{display:none}
+.view.active{display:block}
+.hero{
+ background:linear-gradient(135deg,#143c49,#172b51);
+ border-radius:17px;padding:22px;
+ margin-bottom:15px;
+}
+.hero h2{font-size:24px;color:var(--green)}
+.game-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:12px;
+}
+.game{
+ background:var(--panel);
+ border:1px solid #293952;
+ border-radius:15px;
+ padding:16px;
+ text-align:center;
+}
+.game .emoji{font-size:32px;margin-bottom:9px}
+.game p{font-size:12px}
+.game button{margin-top:10px}
+.progress{
+ height:9px;background:#26354c;
+ border-radius:20px;overflow:hidden;
+ margin-top:10px;
+}
+.progress div{
+ height:100%;width:0%;
+ background:var(--green);
+}
+nav{
+ position:fixed;bottom:0;left:0;
+ width:100%;z-index:10;
+ display:flex;justify-content:space-around;
+ background:#111a2b;
+ border-top:1px solid #293952;
+ padding:10px 2px calc(10px + env(safe-area-inset-bottom));
+}
+nav button{
+ border:0;background:none;color:var(--muted);
+ font-size:11px;min-width:55px;
+}
+nav button span{display:block;font-size:21px;margin-bottom:4px}
+nav button.selected{color:var(--green)}
+#loginScreen{
+ position:fixed;inset:0;z-index:30;
+ background:var(--bg);
+ display:flex;align-items:center;
+ justify-content:center;padding:20px;
+}
+#loginScreen[hidden]{display:none}
+.loginBox{width:100%;max-width:390px}
+.loginLogo{text-align:center;font-size:35px;font-weight:900;color:var(--green);margin-bottom:8px}
+.loginSub{text-align:center;margin-bottom:25px}
+#authMessage{margin-top:12px;color:var(--gold);font-size:13px}
+#toast{
+ position:fixed;bottom:90px;left:50%;
+ transform:translateX(-50%);
+ background:#26354c;color:white;
+ padding:12px 18px;border-radius:10px;
+ display:none;z-index:50;
+ max-width:90%;text-align:center;
+}
+.row{
+ display:flex;justify-content:space-between;
+ align-items:center;gap:10px;
+ padding:12px 0;border-bottom:1px solid #293952;
+}
+.row:last-child{border:0}
+.small{font-size:12px;color:var(--muted)}
+#appScreen[hidden]{display:none}
+@media(max-width:360px){
+ .logo{font-size:19px}
+ .game{padding:12px}
+}
+</style>
+</head>
+
+<body>
+
+<div id="loginScreen">
+ <div class="loginBox">
+  <div class="loginLogo">💎 GEM RUSH</div>
+  <p class="loginSub">Play • Collect • Enjoy</p>
+
+  <div class="card">
+   <h2 id="authTitle">Welcome Back</h2>
+   <div id="signupFields" hidden>
+    <input id="nameInput" placeholder="Your Name" maxlength="30">
+   </div>
+   <input id="emailInput" type="email" placeholder="Email Address">
+   <input id="passwordInput" type="password" placeholder="Password">
+   <button class="btn" id="authButton" onclick="loginUser()">LOGIN</button>
+   <button class="btn secondary" id="switchAuth" onclick="toggleAuth()">CREATE ACCOUNT</button>
+   <button class="btn secondary" onclick="resetPassword()">FORGOT PASSWORD?</button>
+   <div id="authMessage"></div>
+  </div>
+  <p class="small" style="text-align:center">GEM RUSH Virtual Game</p>
+ </div>
+</div>
+
+<div id="appScreen" hidden>
+
+<header>
+ <div class="logo">💎 GEM RUSH</div>
+ <div class="coins">💰 <span id="coinCount">0</span></div>
+</header>
+
+<main class="container">
+
+<section id="home" class="view active">
+ <div class="hero">
+  <h2>GEM RUSH</h2>
+  <p>Collect virtual gems by playing games and completing challenges.</p>
+ </div>
+
+ <div class="card">
+  <h2>Welcome, <span id="playerName">Player</span>!</h2>
+  <p>Your virtual coin balance</p>
+  <h2 style="color:var(--gold);font-size:28px;margin-top:8px">
+   💎 <span id="homeCoins">0</span>
+  </h2>
+ </div>
+
+ <h2 style="margin:18px 0 12px">🎮 Games</h2>
+ <div class="game-grid">
+  <div class="game">
+   <div class="emoji">🎡</div>
+   <h3>Lucky Spin</h3>
+   <p>Spin and collect coins</p>
+   <button class="btn" onclick="showView('spin')">PLAY</button>
+  </div>
+  <div class="game">
+   <div class="emoji">🧩</div>
+   <h3>Match Game</h3>
+   <p>Find matching pairs</p>
+   <button class="btn" onclick="showView('match')">PLAY</button>
+  </div>
+  <div class="game">
+   <div class="emoji">🧠</div>
+   <h3>Quiz</h3>
+   <p>Answer questions</p>
+   <button class="btn" onclick="showView('quiz')">PLAY</button>
+  </div>
+  <div class="game">
+   <div class="emoji">🎁</div>
+   <h3>Daily Tasks</h3>
+   <p>Complete daily tasks</p>
+   <button class="btn" onclick="showView('tasks')">OPEN</button>
+  </div>
+ </div>
+</section>
+
+<section id="spin" class="view">
+ <div class="card">
+  <h2>🎡 Lucky Spin</h2>
+  <p>Try your luck and collect virtual coins.</p>
+  <div id="spinResult" style="text-align:center;font-size:35px;padding:25px">💎</div>
+  <button class="btn" id="spinButton" onclick="spinGame()">SPIN NOW</button>
+  <p id="spinTimer" style="text-align:center;margin-top:12px"></p>
+ </div>
+</section>
+
+<section id="match" class="view">
+ <div class="card">
+  <h2>🧩 Match Game</h2>
+  <p>Find all matching pairs before the timer ends.</p>
+  <div id="matchBoard"></div>
+  <button class="btn" onclick="startMatch()">START GAME</button>
+  <p id="matchStatus"></p>
+ </div>
+</section>
+
+<section id="quiz" class="view">
+ <div class="card">
+  <h2>🧠 Quiz Challenge</h2>
+  <p>Test your knowledge and earn virtual coins.</p>
+  <div id="quizArea">Press start to begin.</div>
+  <button class="btn" onclick="startQuiz()">START QUIZ</button>
+ </div>
+</section>
+
+<section id="offer" class="view">
+ <div class="card">
+  <h2>🎁 Super Offer</h2>
+  <p>Demo challenges for collecting virtual coins.</p>
+  <div id="offerArea"></div>
+ </div>
+</section>
+
+<section id="tasks" class="view">
+ <div class="card">
+  <h2>📋 Daily Tasks</h2>
+  <p>Complete your daily challenges.</p>
+  <div id="taskArea"></div>
+ </div>
+</section>
+
+<section id="wallet" class="view">
+ <div class="card">
+  <h2>💎 Demo Wallet</h2>
+  <h2 style="font-size:28px;color:var(--gold)">
+   <span id="walletCoins">0</span> Coins
+  </h2>
+  <p>These are virtual game coins. They have no cash value. Cash Out is disabled.</p>
+ </div>
+</section>
+
+<section id="profile" class="view">
+ <div class="card">
+  <h2>👤 My Profile</h2>
+  <div class="row"><span>Name</span><b id="profileName">Player</b></div>
+  <div class="row"><span>Email</span><b id="profileEmail">-</b></div>
+  <div class="row"><span>Coins</span><b id="profileCoins">0</b></div>
+  <button class="btn secondary" onclick="logoutUser()">LOGOUT</button>
+ </div>
+
+ <div class="card">
+  <h2>📜 Coin History</h2>
+  <div id="historyList">No history yet.</div>
+ </div>
+</section>
+
+</main>
+
+<nav>
+ <button class="selected" onclick="showView('home',this)"><span>🏠</span>Home</button>
+ <button onclick="showView('offer',this)"><span>🎁</span>Offer</button>
+ <button onclick="showView('tasks',this)"><span>📋</span>Tasks</button>
+ <button onclick="showView('wallet',this)"><span>💎</span>Wallet</button>
+ <button onclick="showView('profile',this)"><span>👤</span>Profile</button>
+</nav>
+</div>
+
+<div id="toast"></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+ getAuth,
+ onAuthStateChanged,
+ signInWithEmailAndPassword,
+ createUserWithEmailAndPassword,
+ sendPasswordResetEmail,
+ signOut,
+ updateProfile
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+ getFirestore,
+ doc,
+ getDoc,
+ setDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* FIREBASE CONFIG */
+const firebaseConfig = {
+ apiKey: "YOUR_API_KEY",
+ authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+ projectId: "YOUR_PROJECT_ID",
+ storageBucket: "YOUR_PROJECT_ID.appspot.com",
+ messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+ appId: "YOUR_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let uid = null;
+let isSignup = false;
+let isReady = false;
+let saveTimer = null;
+let saveQueue = Promise.resolve();
+
+const $ = id => document.getElementById(id);
+
+function toast(message){
+ const box = $("toast");
+ box.textContent = message;
+ box.style.display = "block";
+ clearTimeout(window.toastTimer);
+ window.toastTimer = setTimeout(()=>{
+  box.style.display = "none";
+ },2500);
+}
+
+function authMessage(message){
+ $("authMessage").textContent = message;
+}
+
+window.toggleAuth = function(){
+ isSignup = !isSignup;
+ $("signupFields").hidden = !isSignup;
+ $("authTitle").textContent = isSignup ? "Create Account" : "Welcome Back";
+ $("authButton").textContent = isSignup ? "SIGN UP" : "LOGIN";
+ $("switchAuth").textContent = isSignup ? "BACK TO LOGIN" : "CREATE ACCOUNT";
+ authMessage("");
+};
+
+window.loginUser = async function(){
+ const email = $("emailInput").value.trim();
+ const password = $("passwordInput").value;
+
+ if(!email || !password){
+  authMessage("Enter email and password.");
+  return;
+ }
+
+ try{
+  $("authButton").disabled = true;
+  authMessage("Please wait...");
+
+  if(isSignup){
+   const name = $("nameInput").value.trim();
+
+   if(!name){
+    authMessage("Enter your name.");
+    return;
+   }
+
+   if(password.length < 6){
+    authMessage("Password must be at least 6 characters.");
+    return;
+   }
+
+   const result = await createUserWithEmailAndPassword(auth,email,password);
+   await updateProfile(result.user,{displayName:name});
+
+  }else{
+   await signInWithEmailAndPassword(auth,email,password);
+  }
+
+ }catch(error){
+  console.error(error);
+  authMessage(error.message);
+ }finally{
+  $("authButton").disabled = false;
+ }
+};
+
+window.resetPassword = async function(){
+ const email = $("emailInput").value.trim();
+
+ if(!email){
+  authMessage("Enter your email first.");
+  return;
+ }
+
+ try{
+  await sendPasswordResetEmail(auth,email);
+  authMessage("Password reset email sent.");
+ }catch(error){
+  authMessage(error.message);
+ }
+};
+
+/* DEFAULT PLAYER DATA */
+function defaultState(){
+ return {
+  g:0,
+  c:0,
+  st:0,
+  of:0,
+  oe:0,
+  n:0,
+  so:0,
+  day:"",
+  qd:"",
+  tk:[0,0,0],
+  rq:[],
+  own:["😀"],
+  av:"😀",
+  ns:0,
+  seen:0,
+  h:[],
+  nm:"",
+  em:""
+ };
+}
+
+let S = defaultState();
+
+/* SAFE DATA CLEANUP */
+function cleanState(data){
+ const base = defaultState();
+
+ if(!data || typeof data !== "object") return base;
+
+ const numberKeys = ["g","c","st","of","oe","n","so","ns","seen"];
+
+ numberKeys.forEach(key=>{
+  const value = Number(data[key]);
+  if(Number.isFinite(value)) base[key] = value;
+ });
+
+ if(typeof data.day === "string") base.day = data.day;
+ if(typeof data.qd === "string") base.qd = data.qd;
+if(typeof data.nm === "string") base.nm = data.nm;
+ if(typeof data.em === "string") base.em = data.em;
+ if(typeof data.av === "string") base.av = data.av;
+
+ if(Array.isArray(data.tk)){
+  base.tk = data.tk.slice(0,3).map(x=>{
+   const n = Number(x);
+   return Number.isFinite(n) ? n : 0;
+  });
+ }
+
+ if(Array.isArray(data.own)){
+  base.own = data.own.filter(x=>typeof x==="string").slice(0,30);
+ }
+
+ if(Array.isArray(data.rq)){
+  base.rq = data.rq.slice(0,30);
+ }
+
+ if(Array.isArray(data.h)){
+  base.h = data.h.slice(0,50).filter(item=>
+   Array.isArray(item) &&
+   Number.isFinite(Number(item[0])) &&
+   typeof item[1]==="string" &&
+   Number.isFinite(Number(item[2]))
+  );
+ }
+
+ return base;
+}
+
+/* FIREBASE SAVE QUEUE */
+async function saveCloud(){
+ if(!uid || !isReady) return;
+
+ const userId = uid;
+ const snapshot = cleanState(S);
+
+ saveQueue = saveQueue.then(async()=>{
+  if(userId !== uid) return;
+
+  await setDoc(doc(db,"users",userId),{
+   state:snapshot,
+   t:Date.now()
+  });
+ }).catch(error=>{
+  console.error("Firebase save error:",error);
+  toast("Save failed: "+(error.code || error.message));
+ });
+
+ await saveQueue;
+}
+
+window.save = function(){
+ if(!uid || !isReady) return;
+
+ clearTimeout(saveTimer);
+ saveTimer = setTimeout(()=>{
+  saveCloud();
+ },1000);
+};
+
+/* LOAD USER DATA */
+onAuthStateChanged(auth,async user=>{
+ if(!user){
+  uid = null;
+  isReady = false;
+  $("loginScreen").hidden = false;
+  $("appScreen").hidden = true;
+  return;
+ }
+
+ try{
+  isReady = false;
+  uid = user.uid;
+
+  const ref = doc(db,"users",uid);
+  const snap = await getDoc(ref);
+
+  if(snap.exists()){
+   S = cleanState(snap.data().state);
+  }else{
+   S = defaultState();
+   S.nm = user.displayName || "Player";
+   S.em = user.email || "";
+   await setDoc(ref,{
+    state:cleanState(S),
+    t:Date.now()
+   });
+  }
+
+  S.nm = user.displayName || S.nm || "Player";
+  S.em = user.email || S.em || "";
+
+  isReady = true;
+
+  $("loginScreen").hidden = true;
+  $("appScreen").hidden = false;
+
+  if(typeof window.startApp === "function"){
+   window.startApp();
+  }
+
+  toast("Welcome to GEM RUSH!");
+
+ }catch(error){
+  console.error("Loading error:",error);
+  isReady = false;
+  uid = null;
+  $("loginScreen").hidden = false;
+  $("appScreen").hidden = true;
+  authMessage("Data loading failed: "+error.message);
+ }
+});
+
+/* LOGOUT */
+window.logoutUser = async function(){
+ if(!confirm("Are you sure you want to logout?")) return;
+
+ try{
+  clearTimeout(saveTimer);
+  await saveCloud();
+  await signOut(auth);
+  toast("Logged out");
+ }catch(error){
+  toast("Logout failed: "+error.message);
+ }
+};
+
+/* SHARED FUNCTIONS FOR OTHER PARTS */
+window.getGameState = ()=>S;
+window.getUserId = ()=>uid;
+window.saveGame = ()=>window.save();
+window.showToast = toast;
+window.firebaseDB = db;
+
+</script>
+<script>
+/* NAVIGATION */
+window.showView = function(id,btn){
+ document.querySelectorAll(".view").forEach(v=>{
+  v.classList.remove("active");
+ });
+
+ const target = document.getElementById(id);
+ if(target) target.classList.add("active");
+
+ document.querySelectorAll("nav button").forEach(b=>{
+  b.classList.remove("selected");
+ });
+
+ if(btn) btn.classList.add("selected");
+
+ if(typeof window.updateUI==="function") window.updateUI();
+};
+
+/* GAME STATE */
+function state(){
+ return window.getGameState();
+}
+
+function save(){
+ window.saveGame();
+}
+
+function notify(message){
+ window.showToast(message);
+}
+
+/* COIN REWARD */
+window.addCoins = function(amount,reason){
+ const S = state();
+ amount = Math.floor(Number(amount));
+
+ if(!Number.isFinite(amount) || amount<=0) return;
+
+ S.c += amount;
+
+ S.h = S.h || [];
+ S.h.unshift([Date.now(),reason || "Coins earned",amount]);
+
+ if(S.h.length>50) S.h.length=50;
+
+ save();
+
+ if(typeof window.updateUI==="function") window.updateUI();
+
+ notify("+"+amount+" virtual coins!");
+};
+
+/* SPIN GAME */
+const spinRewards = [5,10,2,20,1,15];
+
+window.spinGame = function(){
+ const S = state();
+
+ const now = Date.now();
+ const wait = 30000;
+
+ if(S.st && now-S.st<wait){
+  notify("Please wait before spinning again.");
+  return;
+ }
+
+ const button = document.getElementById("spinButton");
+ const result = document.getElementById("spinResult");
+
+ button.disabled = true;
+ result.textContent = "🎡";
+
+ const reward = spinRewards[
+  Math.floor(Math.random()*spinRewards.length)
+ ];
+
+ setTimeout(()=>{
+  result.textContent = "💎 "+reward;
+
+  S.st = Date.now();
+
+  window.addCoins(reward,"Lucky Spin");
+
+  button.disabled = false;
+  updateSpinTimer();
+
+ },1200);
+};
+
+function updateSpinTimer(){
+ const S = state();
+ const text = document.getElementById("spinTimer");
+ const button = document.getElementById("spinButton");
+
+ const remaining = 30000-(Date.now()-S.st);
+
+ if(remaining>0){
+  button.disabled = true;
+  text.textContent = "Next spin available in "+Math.ceil(remaining/1000)+" seconds";
+ }else{
+  button.disabled = false;
+  text.textContent = "You can spin now!";
+ }
+}
+
+setInterval(()=>{
+ if(window.getGameState && window.getUserId()){
+  updateSpinTimer();
+ }
+},1000);
+
+/* MATCH GAME */
+let matchCards = [];
+let firstCard = null;
+let secondCard = null;
+let matchedCount = 0;
+let matchLocked = false;
+let matchStarted = false;
+let matchInterval = null;
+let matchTime = 40;
+
+const matchSymbols = ["🍎","🍇","🍋","🍒","⭐","💎"];
+
+window.startMatch = function(){
+ clearInterval(matchInterval);
+
+ matchCards = [...matchSymbols,...matchSymbols]
+  .sort(()=>Math.random()-.5);
+
+ firstCard = null;
+ secondCard = null;
+ matchedCount = 0;
+ matchLocked = false;
+ matchStarted = true;
+ matchTime = 40;
+
+ document.getElementById("matchStatus").textContent =
+  "Time: 40 seconds";
+
+ renderMatch();
+
+ matchInterval = setInterval(()=>{
+  matchTime--;
+
+  document.getElementById("matchStatus").textContent =
+   "Time: "+matchTime+" seconds";
+
+  if(matchTime<=0){
+   clearInterval(matchInterval);
+   matchStarted = false;
+   document.getElementById("matchStatus").textContent =
+    "Time over! Try again.";
+   document.getElementById("matchBoard").innerHTML = "";
+  }
+ },1000);
+};
+
+function renderMatch(){
+ const board = document.getElementById("matchBoard");
+
+ board.style.display = "grid";
+ board.style.gridTemplateColumns = "repeat(3,1fr)";
+ board.style.gap = "10px";
+ board.innerHTML = "";
+
+ matchCards.forEach((symbol,index)=>{
+  const card = document.createElement("button");
+
+  card.textContent = "❔";
+  card.style.cssText =
+   "height:65px;border:1px solid #354762;border-radius:12px;background:#26354c;color:white;font-size:25px";
+
+  card.onclick = ()=>flipMatchCard(index,card,symbol);
+
+  board.appendChild(card);
+ });
+}
+
+function flipMatchCard(index,card,symbol){
+ if(!matchStarted || matchLocked || card.dataset.done==="yes") return;
+
+ if(card===firstCard) return;
+
+ card.textContent = symbol;
+
+ if(!firstCard){
+  firstCard = card;
+  return;
+ }
+
+ secondCard = card;
+ matchLocked = true;
+
+ if(firstCard.textContent===secondCard.textContent){
+  firstCard.dataset.done = "yes";
+  secondCard.dataset.done = "yes";
+
+  matchedCount++;
+  firstCard = null;
+  secondCard = null;
+  matchLocked = false;
+
+  if(matchedCount===6){
+   clearInterval(matchInterval);
+   matchStarted = false;
+
+   document.getElementById("matchStatus").textContent =
+    "You matched all pairs!";
+
+   window.addCoins(12,"Match Game");
+  }
+
+ }else{
+  setTimeout(()=>{
+   firstCard.textContent = "❔";
+   secondCard.textContent = "❔";
+
+   firstCard = null;
+   secondCard = null;
+   matchLocked = false;
+  },700);
+ }
+}
+</script>
+<script>
+/* QUIZ QUESTIONS */
+const quizQuestions = [
+ {
+  q:"Which planet is known as the Red Planet?",
+  a:["Earth","Mars","Venus","Jupiter"],
+  c:1
+ },
+ {
+  q:"How many days are there in a week?",
+  a:["5","6","7","8"],
+  c:2
+ },
+ {
+  q:"Which is the largest ocean?",
+  a:["Atlantic","Indian","Arctic","Pacific"],
+  c:3
+ },
+ {
+  q:"What is the capital of India?",
+  a:["Mumbai","New Delhi","Kolkata","Chennai"],
+  c:1
+ },
+ {
+  q:"How many sides does a triangle have?",
+  a:["2","3","4","5"],
+  c:1
+ },
+ {
+  q:"Which animal is known as the King of the Jungle?",
+  a:["Tiger","Lion","Elephant","Wolf"],
+  c:1
+ },
+ {
+  q:"Which gas do plants absorb?",
+  a:["Oxygen","Nitrogen","Carbon dioxide","Hydrogen"],
+  c:2
+ }
+];
+
+let quizSet = [];
+let quizIndex = 0;
+let quizScore = 0;
+let quizFinished = false;
+
+window.startQuiz = function(){
+ quizSet = [...quizQuestions]
+  .sort(()=>Math.random()-.5)
+  .slice(0,5);
+
+ quizIndex = 0;
+ quizScore = 0;
+ quizFinished = false;
+
+ showQuizQuestion();
+};
+
+function showQuizQuestion(){
+ const area = document.getElementById("quizArea");
+
+ if(quizIndex>=quizSet.length){
+  quizFinished = true;
+
+  area.innerHTML = `
+   <h3>Quiz Completed!</h3>
+   <p>Your correct answers: ${quizScore}/5</p>
+   <p>Virtual reward: ${quizScore*3} coins</p>
+   <button class="btn" onclick="claimQuizReward()">
+    CLAIM REWARD
+   </button>
+  `;
+
+  return;
+ }
+
+ const q = quizSet[quizIndex];
+
+ area.innerHTML = `
+  <p>Question ${quizIndex+1} of 5</p>
+  <h3 style="margin-top:12px">${q.q}</h3>
+  ${q.a.map((answer,index)=>`
+   <button class="btn secondary"
+    style="text-align:left"
+    onclick="answerQuiz(${index})">
+    ${answer}
+   </button>
+  `).join("")}
+ `;
+}
+
+window.answerQuiz = function(index){
+ if(quizFinished) return;
+
+ if(index===quizSet[quizIndex].c){
+  quizScore++;
+ }
+
+ quizIndex++;
+ showQuizQuestion();
+};
+
+window.claimQuizReward = function(){
+ if(!quizFinished) return;
+
+ const S = window.getGameState();
+
+ if(S.qd===new Date().toDateString()){
+  window.showToast("Today's quiz reward already claimed.");
+  return;
+ }
+
+ const reward = quizScore*3;
+
+ if(reward>0){
+  S.qd = new Date().toDateString();
+  window.addCoins(reward,"Quiz Reward");
+ }else{
+  window.showToast("No coins earned. Try again!");
+ }
+ quizFinished = false;
+
+ document.getElementById("quizArea").innerHTML =
+  "<p>Thanks for playing!</p>";
+};
+
+/* DAILY TASKS */
+const dailyTasks = [
+ {title:"Play Lucky Spin",reward:5},
+ {title:"Complete a Match Game",reward:10},
+ {title:"Complete a Quiz",reward:10}
+];
+
+function todayKey(){
+ return new Date().toDateString();
+}
+
+function prepareTasks(){
+ const S = window.getGameState();
+
+ if(S.day!==todayKey()){
+  S.day = todayKey();
+  S.tk = [0,0,0];
+  window.saveGame();
+ }
+}
+
+window.renderTasks = function(){
+ prepareTasks();
+
+ const S = window.getGameState();
+ const area = document.getElementById("taskArea");
+
+ area.innerHTML = dailyTasks.map((task,index)=>{
+  const done = S.tk[index]===1;
+
+  return `
+   <div class="row">
+    <div>
+     <b>${task.title}</b>
+     <p>Reward: ${task.reward} virtual coins</p>
+    </div>
+    <span>${done?"✅ Done":"⏳ Pending"}</span>
+   </div>
+  `;
+ }).join("");
+};
+
+/* TASK REWARD TRACKING */
+window.completeDailyTask = function(index){
+ prepareTasks();
+
+ const S = window.getGameState();
+
+ if(S.tk[index]===1) return;
+
+ S.tk[index] = 1;
+
+ window.addCoins(dailyTasks[index].reward,"Daily Task");
+
+ renderTasks();
+};
+
+/* SUPER OFFER - DEMO CHALLENGE */
+window.renderOffer = function(){
+ const S = window.getGameState();
+
+ const area = document.getElementById("offerArea");
+
+ area.innerHTML = `
+  <div class="card">
+   <h3>💎 Virtual Coin Challenge</h3>
+   <p>Complete this demo challenge once to receive 20 virtual coins.</p>
+   <button class="btn" id="offerButton"
+    onclick="claimOffer()">
+    CLAIM DEMO REWARD
+   </button>
+   <p class="small" style="margin-top:10px">
+    No purchases, app installs or real-money rewards.
+   </p>
+  </div>
+ `;
+
+ if(S.of===1){
+  document.getElementById("offerButton").disabled = true;
+  document.getElementById("offerButton").textContent = "ALREADY CLAIMED";
+ }
+};
+
+window.claimOffer = function(){
+ const S = window.getGameState();
+
+ if(S.of===1){
+  window.showToast("Already claimed!");
+  return;
+ }
+
+ S.of = 1;
+
+ window.addCoins(20,"Demo Offer");
+
+ renderOffer();
+};
+
+/* GAME TASK COMPLETION */
+window.onGameTask = function(index){
+ window.completeDailyTask(index);
+};
+
+/* INITIAL RENDER */
+window.part4Ready = function(){
+ renderTasks();
+ renderOffer();
+};
+</script>
+<script>
+/* DAILY TASK TRACKING */
+function resetDailyTasks(){
+ const S = window.getGameState();
+ const today = new Date().toDateString();
+
+ if(S.day !== today){
+  S.day = today;
+  S.tk = [0,0,0];
+  window.saveGame();
+ }
+}
+
+function trackGameTask(reason){
+ resetDailyTasks();
+
+ const S = window.getGameState();
+ let index = -1;
+
+ if(reason==="Lucky Spin") index=0;
+ if(reason==="Match Game") index=1;
+ if(reason==="Quiz Reward") index=2;
+
+ if(index>=0 && S.tk[index]!==1){
+  S.tk[index]=1;
+  window.saveGame();
+ }
+}
+
+/* REPLACE COIN FUNCTION */
+window.addCoins = function(amount,reason){
+ const S = window.getGameState();
+
+ amount = Math.floor(Number(amount));
+
+ if(!Number.isFinite(amount) || amount<=0) return;
+
+ trackGameTask(reason);
+
+ S.c = Math.max(0,Number(S.c)||0)+amount;
+
+ S.h = Array.isArray(S.h)?S.h:[];
+ S.h.unshift([Date.now(),reason||"Coins earned",amount]);
+
+ if(S.h.length>50) S.h.length=50;
+
+ window.saveGame();
+ window.updateUI();
+
+ window.showToast("+"+amount+" virtual coins!");
+};
+
+/* HISTORY */
+window.renderHistory = function(){
+ const S = window.getGameState();
+ const area = document.getElementById("historyList");
+
+ if(!area) return;
+
+ if(!S.h || S.h.length===0){
+  area.innerHTML="<p>No history yet.</p>";
+  return;
+ }
+
+ area.innerHTML=S.h.map(item=>{
+  const date=new Date(item[0]).toLocaleString("en-IN",{
+   day:"numeric",
+   month:"short",
+   hour:"2-digit",
+   minute:"2-digit"
+  });
+
+  const amount=Number(item[2])||0;
+
+  return `
+   <div class="row">
+    <div>
+     <b>${escapeHTML(item[1])}</b>
+     <p class="small">${date}</p>
+    </div>
+    <b style="color:${amount<0?"#ff6262":"#27dfb5"}">
+     +${amount}
+    </b>
+   </div>
+  `;
+ }).join("");
+};
+
+function escapeHTML(value){
+ return String(value).replace(/[&<>"']/g,char=>({
+  "&":"&amp;",
+  "<":"&lt;",
+  ">":"&gt;",
+  '"':"&quot;",
+  "'":"&#39;"
+ })[char]);
+}
+
+/* UPDATE ALL UI */
+window.updateUI = function(){
+ const S=window.getGameState();
+
+ document.getElementById("coinCount").textContent=S.c||0;
+ document.getElementById("homeCoins").textContent=S.c||0;
+ document.getElementById("walletCoins").textContent=S.c||0;
+ document.getElementById("profileCoins").textContent=S.c||0;
+
+ document.getElementById("playerName").textContent=S.nm||"Player";
+ document.getElementById("profileName").textContent=S.nm||"Player";
+ document.getElementById("profileEmail").textContent=S.em||"-";
+
+ renderHistory();
+ renderTasks();
+ renderOffer();
+};
+
+/* START APP AFTER FIREBASE LOAD */
+window.startApp = function(){
+ const S=window.getGameState();
+
+ if(S.seen!==1){
+  S.seen=1;
+  window.saveGame();
+ }
+
+ resetDailyTasks();
+ window.updateUI();
+};
+
+/* QUIZ DAILY CLAIM SAFETY */
+window.claimQuizReward = function(){
+ const S=window.getGameState();
+
+ if(!window.quizFinishedCheck){
+  // Quiz completion is checked by the quiz module.
+ }
+
+ if(S.qd===new Date().toDateString()){
+  window.showToast("Today's quiz reward already claimed.");
+  return;
+ }
+
+ window.showToast("Please complete the quiz first.");
+};
+
+/* PROFILE */
+window.openProfile = function(){
+ window.showView("profile");
+ window.renderHistory();
+};
+
+/* INITIAL UI */
+document.addEventListener("DOMContentLoaded",()=>{
+ if(window.getUserId && window.getUserId()){
+  window.updateUI();
+ }
+});
+</script>
+
+</body>
+</html>
